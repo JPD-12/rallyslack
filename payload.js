@@ -1,1 +1,1 @@
-alert("RCE Confirmed");
+alert("✅ Dynamic import RCE succeeded!");
