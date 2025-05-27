@@ -1,1 +1,1 @@
-alert("✅ Dynamic import RCE succeeded!");
+alert(document.cookie);
