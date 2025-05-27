@@ -10,7 +10,7 @@ const ast = babel.parseSync(source);
 // Function to notify the server of the execution result
 async function pingBack(result) {
   try {
-    await axios.post('http://10.0.2.15:8080/', { result });
+    await axios.post('http://localhost', { result });
     console.log('Pingback sent successfully');
   } catch (error) {
     console.error('Error sending pingback:', error);
